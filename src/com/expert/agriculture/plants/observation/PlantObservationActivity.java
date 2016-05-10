@@ -1,11 +1,9 @@
 package com.expert.agriculture.plants.observation;
 import java.io.IOException;
 import java.util.ArrayList;
-
 import com.expert.agriculture.TextPicListAdapter;
 import com.expert.agriculture.R;
-import com.expert.agriculture.db.DBModel;
-
+import com.expert.agriculture.TextListAdapter;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -25,66 +23,51 @@ import android.widget.Toast;
 
 public class PlantObservationActivity extends Activity {
 	
-	private ListView categoriesView ;
-	private ArrayList<String> itemnames = new ArrayList<String>();
-	private ArrayList<Integer> imgids = new ArrayList<Integer>();
-	private String tableName = "plant";
+	private ListView mCategoriesView ;
+	private ArrayList<String> mItemNames; 
+	private ObservationController mObsController;
+
 		
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
     	   	 
-    	openAndQueryDatabase();  	
-    	
+    	mObsController = new  ObservationController(getApplicationContext());	
+    	mItemNames = mObsController.getPlantList();
     	setContentView(R.layout.listview);
-    	categoriesView  = (ListView) findViewById(R.id.list);
-    	TextPicListAdapter adapter = new TextPicListAdapter(this, itemnames, imgids);    	    	
-    	categoriesView.setAdapter(adapter);
+    	mCategoriesView  = (ListView) findViewById(R.id.list);
+    	TextListAdapter adapter = new TextListAdapter(this, mItemNames);    	    	
+    	mCategoriesView.setAdapter(adapter);
     	
-    	categoriesView.setOnItemClickListener(new OnItemClickListener() {
+    	mCategoriesView.setOnItemClickListener(new OnItemClickListener() {
     		@Override
     		public void onItemClick(AdapterView<?> parent, View view,
     				int position, long id) {
     			     int itemPosition     = position;
     			// ListView Clicked item value
-    			String  itemValue    = (String) categoriesView.getItemAtPosition(position);
+    			String  itemValue    = (String) mCategoriesView.getItemAtPosition(position);
     			Toast.makeText(getApplicationContext(),
     					"Position :"+itemPosition+"  ListItem : " +itemValue , Toast.LENGTH_LONG)
-    					.show();
+    			.show();
+    			ArrayList<String> teritoryList = mObsController.getTeritoryList(itemValue);
+    			if (teritoryList.size() == 1)
+    			{
+    				//startPlantObservation();
     			}
+    			else
+    			{
+    				showTeritoryDialog(teritoryList);
+    			}    			
+    		}
 
     	}); 
-    }
-	
-    
-	private void openAndQueryDatabase() {
-
-		DBModel dbHelper = new DBModel(this.getApplicationContext());
-		dbHelper.createDatabase();
-
-		Toast.makeText(getApplicationContext(), "DB recieved " , Toast.LENGTH_LONG).show();
-
-		Cursor c = dbHelper.getDB().rawQuery("SELECT name_plant FROM " + 	tableName, null);
-		if (c != null ) {
-			if (c.moveToFirst()) {
-				do {
-					String plant_name = c.getString(c.getColumnIndex("name_plant"));
-					itemnames.add(plant_name);
-				}while (c.moveToNext());
-			}
-		}
-		c = dbHelper.getDB().rawQuery("SELECT picture_plant FROM " + 	tableName, null);
-		if (c != null ) {
-			if (c.moveToFirst()) {
-				do {
-					String plantPicture = c.getString(c.getColumnIndex("picture_plant"));
-					int id = getResources().getIdentifier(plantPicture, "drawable", getBaseContext().getPackageName());
-					imgids.add(id);    					
-				}while (c.moveToNext());
-			}
-		}
-
 	}
+
+    private void showTeritoryDialog(ArrayList<String> teritoryList)
+    {
+    	SingleChoiceListDialog teritoryDialog = new SingleChoiceListDialog("Choose teritory", teritoryList);
+    	teritoryDialog.show(getFragmentManager(), "Teritory");
+    }	
 
 
 	@Override
